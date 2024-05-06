@@ -16,11 +16,11 @@ model User {
   picture   String?
   phone     String?
   address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   carts     Cart[]
   orders    Order[]
   reviews   Review[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt()
 }
 
 model Product {
@@ -30,52 +30,52 @@ model Product {
   price       Float
   picture     String
   stock       Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])
   reviews     Review[]
-  orders      Order[]
-  carts       Cart[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  carts       Cart[]    @relation("CartToProduct")
+  orders      Order[]   @relation("OrderToProduct")
 }
 
 model Order {
   id        String    @id @default(cuid())
   userId    String?
-  user      User?     @relation(fields: [userId], references: [id])
-  products  Product[]
   total     Float
   status    String    @default("PENDING")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  user      User?     @relation(fields: [userId], references: [id])
+  products  Product[] @relation("OrderToProduct")
 }
 
 model Cart {
   id        String    @id @default(cuid())
   userId    String?
-  user      User?     @relation(fields: [userId], references: [id])
-  products  Product[]
   total     Float
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  user      User?     @relation(fields: [userId], references: [id])
+  products  Product[] @relation("CartToProduct")
 }
 
 model Review {
   id        String   @id @default(cuid())
   userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
   productId String?
-  product   Product? @relation(fields: [productId], references: [id])
   rating    Int
   comment   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  product   Product? @relation(fields: [productId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
 }
 
 model Category {
   id        String    @id @default(cuid())
   name      String
-  products  Product[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  products  Product[]
 }
