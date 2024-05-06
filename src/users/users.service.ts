@@ -10,9 +10,6 @@ export class UsersService {
   constructor(private readonly prismaService: PrismaService) { }
 
   async create(createUserDto: CreateUserDto) {
-    if (!createUserDto) {
-      throw new NotFoundException(`User data was not provided`);
-    }
 
     const findUser = await this.prismaService.user.findUnique({ where: { email: createUserDto.email } });
 
@@ -49,15 +46,21 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`User was not found`);
     }
-    if (!updateUserDto) {
-      throw new NotFoundException(`User data was not provided`);
-    }
 
-    if (updateUserDto.password) {
+    if (updateUserDto.confirmPassword && updateUserDto.password === updateUserDto.confirmPassword) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 7);
+      updateUserDto = { ...updateUserDto, confirmPassword: undefined };
+
+      const mergedData = { ...user, ...updateUserDto };
+
+      Object.keys(mergedData).forEach(key => mergedData[key] === undefined && delete mergedData[key]);
+
+      return await this.prismaService.user.update({ where: { id }, data: mergedData });
+
+    } else {
+      throw new HttpException(`Passwords do not match`, 400);
     }
 
-    return await this.prismaService.user.update({ where: { id }, data: updateUserDto });
   }
 
   async remove(id: string) {
@@ -65,6 +68,6 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`User was not found`);
     }
-    return user;
+    return this.prismaService.user.delete({ where: { id } });
   }
 }
