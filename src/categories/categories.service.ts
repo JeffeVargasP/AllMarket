@@ -1,26 +1,65 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class CategoriesService {
-  create(createCategoryDto: CreateCategoryDto) {
-    return 'This action adds a new category';
+
+  constructor(private readonly prismaService: PrismaService) { }
+
+  async create(createCategoryDto: CreateCategoryDto) {
+    const findCategory = await this.prismaService.category.findFirst({ where: { name: createCategoryDto.name } });
+
+    if (findCategory) {
+      throw new NotFoundException(`Category with name ${createCategoryDto.name} already exists`);
+    }
+
+    return await this.prismaService.category.create({ data: createCategoryDto })
   }
 
-  findAll() {
-    return `This action returns all categories`;
+  async findAll() {
+    const categories = await this.prismaService.category.findMany();
+
+    if (categories.length === 0) {
+      throw new NotFoundException(`Categories were not found`);
+    }
+
+    return categories;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} category`;
+  async findOne(id: string) {
+    const category = await this.prismaService.category.findUnique({ where: { id } });
+
+    if (!category) {
+      throw new NotFoundException(`Category was not found`);
+    }
+
+    return category;
   }
 
-  update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    return `This action updates a #${id} category`;
+  async update(id: string, updateCategoryDto: UpdateCategoryDto) {
+    const category = await this.prismaService.category.findUnique({ where: { id } });
+
+    if (!category) {
+      throw new NotFoundException(`Category was not found`);
+    }
+
+    const mergedData = { ...category, ...updateCategoryDto };
+
+    Object.keys(mergedData).forEach(key => mergedData[key] === undefined && delete mergedData[key]);
+
+    return await this.prismaService.category.update({ where: { id }, data: mergedData });
+
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} category`;
+  async remove(id: string) {
+    const category = await this.prismaService.category.findUnique({ where: { id } });
+
+    if (!category) {
+      throw new NotFoundException(`Category was not found`);
+    }
+
+    return await this.prismaService.category.delete({ where: { id } });
   }
 }
