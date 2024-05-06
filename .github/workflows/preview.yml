@@ -21,8 +21,10 @@ jobs:
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Setup prisma db pull
+      - name: Prisma db pull
         run: npx prisma db pull
+
+      - name: Prisma db migrate
         run: npx prisma migrate dev
 
       - name: Build Project Artifacts
